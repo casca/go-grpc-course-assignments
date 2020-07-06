@@ -19,9 +19,13 @@ func main() {
 	}
 	defer cc.Close()
 
-	// doUnary(calculatorpb.NewCalculatorServiceClient(cc))
+	c := calculatorpb.NewCalculatorServiceClient(cc)
 
-	doServerStreaming(calculatorpb.NewCalculatorServiceClient(cc))
+	// doUnary(c)
+
+	// doServerStreaming(c)
+
+	doClientStreaming(c)
 }
 
 func doUnary(c calculatorpb.CalculatorServiceClient) {
@@ -55,4 +59,76 @@ func doServerStreaming(c calculatorpb.CalculatorServiceClient) {
 		}
 		log.Printf("Response from DecomposePrimeNumber: %v\n", msg.GetPrimeFactor())
 	}
+}
+
+// func doClientStreaming(c calculatorpb.CalculatorServiceClient) {
+// 	stream, err := c.ComputeAverage(context.Background())
+// 	if err != nil {
+// 		log.Fatalf("error while calling ComputeAverage: %v\n", err)
+// 	}
+
+// 	// numbers := []*calculatorpb.ComputeAverageRequest{
+// 	// 	&calculatorpb.ComputeAverageRequest{
+// 	// 		Number: 1,
+// 	// 	},
+// 	// 	&calculatorpb.ComputeAverageRequest{
+// 	// 		Number: 2,
+// 	// 	},
+// 	// 	&calculatorpb.ComputeAverageRequest{
+// 	// 		Number: 3,
+// 	// 	},
+// 	// 	&calculatorpb.ComputeAverageRequest{
+// 	// 		Number: 4,
+// 	// 	},
+// 	// }
+
+// 	// for _, req := range numbers {
+// 	// 	stream.Send(req)
+// 	// }
+
+// 	numbers := []int32{3, 5, 9, 54, 23}
+
+// 	for _, number := range numbers {
+// 		stream.Send(&calculatorpb.ComputeAverageRequest{
+// 			Number: number,
+// 		})
+// 	}
+
+// 	res, err := stream.CloseAndRecv()
+// 	if err != nil {
+// 		log.Fatalf("error while receiving response from ComputeAverage: %v", err)
+// 	}
+// 	fmt.Printf("The Average is: %v\n", res.GetAverage())
+
+// 	// res, err := stream.CloseAndRecv()
+// 	// if err != nil {
+// 	// 	log.Fatalf("error while receiving response from ComputeAverage: %v", err)
+// 	// }
+// 	// fmt.Printf("Average: %v\n", res.Average)
+
+// }
+
+func doClientStreaming(c calculatorpb.CalculatorServiceClient) {
+	fmt.Println("Starting to do a ComputeAverage Client Streaming RPC...")
+
+	stream, err := c.ComputeAverage(context.Background())
+	if err != nil {
+		log.Fatalf("Error while opening stream: %v", err)
+	}
+
+	numbers := []int32{3, 5, 9, 54, 23}
+
+	for _, number := range numbers {
+		fmt.Printf("Sending number: %v\n", number)
+		stream.Send(&calculatorpb.ComputeAverageRequest{
+			Number: number,
+		})
+	}
+
+	res, err := stream.CloseAndRecv()
+	if err != nil {
+		log.Fatalf("Error while receiving response: %v", err)
+	}
+
+	fmt.Printf("The Average is: %v\n", res.GetAverage())
 }
